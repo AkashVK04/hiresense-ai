@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { extractTextFromPDF } from "../utils/pdfReader";
+import { analyzeResume } from "../services/groqService";
 
 function UploadResume() {
   const [resume, setResume] = useState(null);
   const [role, setRole] = useState("Frontend");
   const [difficulty, setDifficulty] = useState("Easy");
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
@@ -15,6 +17,8 @@ function UploadResume() {
       return;
     }
 
+    setLoading(true);
+
     try {
       const resumeText = await extractTextFromPDF(resume);
 
@@ -22,10 +26,19 @@ function UploadResume() {
       localStorage.setItem("role", role);
       localStorage.setItem("difficulty", difficulty);
 
+      const analysis = await analyzeResume(resumeText, role);
+
+      localStorage.setItem("resumeAnalysis", JSON.stringify(analysis));
+
+      localStorage.removeItem("interviewQuestions");
+      localStorage.removeItem("interviewResults");
+
       navigate("/interview");
     } catch (error) {
-      console.error(error);
-      alert("Failed to read PDF");
+      console.error("Resume Error:", error);
+      alert(error.message || "Failed to read or analyze resume");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -39,16 +52,20 @@ function UploadResume() {
         onChange={(e) => setResume(e.target.files[0])}
       />
 
-      <br /><br />
+      <br />
+      <br />
 
       <select value={role} onChange={(e) => setRole(e.target.value)}>
         <option>Frontend</option>
         <option>Java</option>
         <option>Full Stack</option>
         <option>Data Analyst</option>
+        <option>AI/ML</option>
+        <option>System Design</option>
       </select>
 
-      <br /><br />
+      <br />
+      <br />
 
       <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
         <option>Easy</option>
@@ -56,10 +73,11 @@ function UploadResume() {
         <option>Hard</option>
       </select>
 
-      <br /><br />
+      <br />
+      <br />
 
-      <button onClick={handleStart}>
-        Start Interview
+      <button onClick={handleStart} disabled={loading}>
+        {loading ? "Analyzing Resume..." : "Start Interview"}
       </button>
     </div>
   );

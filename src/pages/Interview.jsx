@@ -76,7 +76,7 @@ function Interview() {
       setRecording(false);
 
       console.log("Recorded audio:", audioBlob);
-      alert("Audio recorded successfully. Next we will convert it to text.");
+      alert("Audio recorded successfully. Transcription will be added next.");
     } catch (error) {
       console.error(error);
       alert("Failed to stop recording.");
@@ -98,28 +98,41 @@ function Interview() {
         role
       );
 
+      const normalizedResult = {
+        technicalScore: Number(result.technicalScore || 0),
+        communicationScore: Number(result.communicationScore || 0),
+        confidenceScore: Number(result.confidenceScore || 0),
+        overallScore: Number(result.overallScore || 0),
+        feedback: result.feedback || "No feedback provided.",
+        idealAnswer: result.idealAnswer || "No ideal answer provided.",
+        improvement: result.improvement || "No improvement provided.",
+      };
+
       const updatedResults = [
         ...results,
         {
           question: questions[currentIndex],
           answer,
-          evaluation: result,
+          evaluation: normalizedResult,
         },
       ];
 
-      setFeedback(result);
+      setFeedback(normalizedResult);
       setResults(updatedResults);
       localStorage.setItem("interviewResults", JSON.stringify(updatedResults));
     } catch (err) {
       console.error(err);
 
       const mockEvaluation = {
-        score: 7,
-        feedback: "AI quota is exhausted, so this is a demo evaluation.",
+        technicalScore: 7,
+        communicationScore: 7,
+        confidenceScore: 7,
+        overallScore: 7,
+        feedback: "AI evaluation failed, so this is a demo evaluation.",
         idealAnswer:
-          "This section will show an ideal answer when AI quota is available.",
+          "This section will show an ideal answer when AI evaluation is available.",
         improvement:
-          "Connect AI API again or wait for quota reset to get real evaluation.",
+          "Check backend API or AI quota to get real evaluation.",
       };
 
       const updatedResults = [
@@ -223,8 +236,8 @@ function Interview() {
           </button>
 
           <p style={{ fontSize: "12px", color: "gray" }}>
-            Voice recording works using your microphone. Transcription will be
-            added next using Groq Whisper.
+            Voice recording is enabled. Speech-to-text transcription will be
+            connected next.
           </p>
         </>
       )}
@@ -235,15 +248,31 @@ function Interview() {
             marginTop: "20px",
             background: "#f1f1f1",
             padding: "20px",
+            borderRadius: "10px",
           }}
         >
-          <h2>Score: {feedback.score}/10</h2>
+          <h2>Overall Score: {feedback.overallScore}/10</h2>
+
+          <p>
+            <b>Technical Score:</b> {feedback.technicalScore}/10
+          </p>
+
+          <p>
+            <b>Communication Score:</b> {feedback.communicationScore}/10
+          </p>
+
+          <p>
+            <b>Confidence Score:</b> {feedback.confidenceScore}/10
+          </p>
+
           <p>
             <b>Feedback:</b> {feedback.feedback}
           </p>
+
           <p>
             <b>Ideal Answer:</b> {feedback.idealAnswer}
           </p>
+
           <p>
             <b>Improvement:</b> {feedback.improvement}
           </p>

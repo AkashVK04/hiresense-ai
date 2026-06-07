@@ -1,52 +1,51 @@
-import Groq from "groq-sdk";
-
-const groq = new Groq({
-  apiKey: import.meta.env.VITE_GROQ_API_KEY,
-  dangerouslyAllowBrowser: true,
-});
-
 function cleanJsonResponse(text) {
   return text.replace(/```json/g, "").replace(/```/g, "").trim();
 }
 
+async function callGroq(prompt) {
+  const response = await fetch("/api/groq", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ prompt }),
+  });
+
+  const rawText = await response.text();
+
+  let data;
+
+  try {
+    data = JSON.parse(rawText);
+  } catch {
+    throw new Error(rawText || "Server returned invalid response");
+  }
+
+  if (!response.ok) {
+    throw new Error(data.error || "Groq API request failed");
+  }
+
+  return data.choices?.[0]?.message?.content || "{}";
+}
+
 export async function generateQuestions(resumeText, role, difficulty) {
   const prompt = `
-You are an expert technical interviewer.
+Generate exactly 8 interview questions for ${role} role.
+Difficulty: ${difficulty}
 
 Candidate Resume:
 ${resumeText}
 
-Role: ${role}
-Difficulty: ${difficulty}
-
-Generate exactly 8 interview questions:
-1. 4 technical questions related to the selected role
-2. 2 project-based questions based on the resume
-3. 2 HR questions
-
 Return ONLY a valid JSON array of strings.
-No markdown. No explanation.
 `;
 
-  const response = await groq.chat.completions.create({
-    model: "llama-3.3-70b-versatile",
-    messages: [
-      {
-        role: "user",
-        content: prompt,
-      },
-    ],
-  });
-
-  const text = response.choices[0].message.content;
+  const text = await callGroq(prompt);
   return JSON.parse(cleanJsonResponse(text));
 }
 
 export async function evaluateAnswer(question, answer, role) {
   const prompt = `
-You are a friendly technical interviewer.
-
-Role: ${role}
+Evaluate this interview answer for ${role} role.
 
 Question:
 ${question}
@@ -54,35 +53,40 @@ ${question}
 Candidate Answer:
 ${answer}
 
-Evaluate fairly.
+Return ONLY valid JSON:
+{
+  "technicalScore": 0,
+  "communicationScore": 0,
+  "confidenceScore": 0,
+  "overallScore": 0,
+  "feedback": "",
+  "idealAnswer": "",
+  "improvement": ""
+}
+`;
+
+  const text = await callGroq(prompt);
+  return JSON.parse(cleanJsonResponse(text));
+}
+
+export async function analyzeResume(resumeText, role) {
+  const prompt = `
+Analyze this resume for ${role} role.
+
+Resume:
+${resumeText}
 
 Return ONLY valid JSON:
 {
-  "score": 0,
-  "feedback": "short feedback",
-  "idealAnswer": "ideal answer under 100 words",
-  "improvement": "how to improve"
+  "resumeScore": 0,
+  "skillsDetected": [],
+  "projectsDetected": [],
+  "missingSkills": [],
+  "suggestions": [],
+  "summary": ""
 }
-
-Scoring:
-0-2 = incorrect
-3-5 = partially correct
-6-8 = good
-9-10 = excellent
-
-No markdown. No explanation.
 `;
 
-  const response = await groq.chat.completions.create({
-    model: "llama-3.3-70b-versatile",
-    messages: [
-      {
-        role: "user",
-        content: prompt,
-      },
-    ],
-  });
-
-  const text = response.choices[0].message.content;
+  const text = await callGroq(prompt);
   return JSON.parse(cleanJsonResponse(text));
 }

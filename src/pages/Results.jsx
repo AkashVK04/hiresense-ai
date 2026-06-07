@@ -9,6 +9,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Legend,
 } from "recharts";
 
 function Results() {
@@ -20,32 +21,33 @@ function Results() {
   const role = localStorage.getItem("role") || "Frontend";
   const difficulty = localStorage.getItem("difficulty") || "Easy";
 
-  const totalScore = results.reduce((sum, item) => {
-    return sum + Number(item.evaluation?.score || 0);
-  }, 0);
+  const avg = (key) => {
+    if (results.length === 0) return 0;
 
-  const averageScore =
-    results.length > 0 ? Math.round((totalScore / results.length) * 10) : 0;
+    const total = results.reduce((sum, item) => {
+      return sum + Number(item.evaluation?.[key] || 0);
+    }, 0);
+
+    return Math.round((total / results.length) * 10);
+  };
+
+  const overallAverage = avg("overallScore");
+  const technicalAverage = avg("technicalScore");
+  const communicationAverage = avg("communicationScore");
+  const confidenceAverage = avg("confidenceScore");
 
   const chartData = results.map((item, index) => ({
     question: `Q${index + 1}`,
-    score: Number(item.evaluation?.score || 0),
+    Overall: Number(item.evaluation?.overallScore || 0),
+    Technical: Number(item.evaluation?.technicalScore || 0),
+    Communication: Number(item.evaluation?.communicationScore || 0),
+    Confidence: Number(item.evaluation?.confidenceScore || 0),
   }));
 
-  const highestScore =
-    results.length > 0
-      ? Math.max(...results.map((r) => Number(r.evaluation?.score || 0)))
-      : 0;
-
-  const lowestScore =
-    results.length > 0
-      ? Math.min(...results.map((r) => Number(r.evaluation?.score || 0)))
-      : 0;
-
   const getRecommendation = () => {
-    if (averageScore >= 85) return "Strong Hire";
-    if (averageScore >= 70) return "Hire";
-    if (averageScore >= 50) return "Needs Improvement";
+    if (overallAverage >= 85) return "Strong Hire";
+    if (overallAverage >= 70) return "Hire";
+    if (overallAverage >= 50) return "Needs Improvement";
     return "Not Ready Yet";
   };
 
@@ -58,13 +60,14 @@ function Results() {
     doc.setFontSize(12);
     doc.text(`Role: ${role}`, 20, 35);
     doc.text(`Difficulty: ${difficulty}`, 20, 45);
-    doc.text(`Overall Score: ${averageScore}/100`, 20, 55);
-    doc.text(`Recommendation: ${getRecommendation()}`, 20, 65);
-    doc.text(`Questions Answered: ${results.length}`, 20, 75);
-    doc.text(`Highest Score: ${highestScore}/10`, 20, 85);
-    doc.text(`Lowest Score: ${lowestScore}/10`, 20, 95);
+    doc.text(`Overall Score: ${overallAverage}/100`, 20, 55);
+    doc.text(`Technical Score: ${technicalAverage}/100`, 20, 65);
+    doc.text(`Communication Score: ${communicationAverage}/100`, 20, 75);
+    doc.text(`Confidence Score: ${confidenceAverage}/100`, 20, 85);
+    doc.text(`Recommendation: ${getRecommendation()}`, 20, 95);
+    doc.text(`Questions Answered: ${results.length}`, 20, 105);
 
-    let y = 115;
+    let y = 125;
 
     results.forEach((item, index) => {
       if (y > 250) {
@@ -72,46 +75,101 @@ function Results() {
         y = 20;
       }
 
-      const question = `Q${index + 1}: ${item.question}`;
-      const answer = `Your Answer: ${item.answer}`;
-      const score = `Score: ${item.evaluation?.score}/10`;
-      const feedback = `Feedback: ${item.evaluation?.feedback}`;
-      const idealAnswer = `Ideal Answer: ${item.evaluation?.idealAnswer}`;
-      const improvement = `Improvement: ${item.evaluation?.improvement}`;
-
-      doc.text(doc.splitTextToSize(question, 170), 20, y);
+      doc.text(
+        doc.splitTextToSize(`Q${index + 1}: ${item.question}`, 170),
+        20,
+        y
+      );
       y += 15;
 
-      doc.text(doc.splitTextToSize(answer, 170), 20, y);
+      doc.text(
+        doc.splitTextToSize(`Your Answer: ${item.answer}`, 170),
+        20,
+        y
+      );
       y += 15;
 
-      doc.text(score, 20, y);
-      y += 10;
+      doc.text(`Overall: ${item.evaluation?.overallScore}/10`, 20, y);
+      y += 8;
+      doc.text(`Technical: ${item.evaluation?.technicalScore}/10`, 20, y);
+      y += 8;
+      doc.text(`Communication: ${item.evaluation?.communicationScore}/10`, 20, y);
+      y += 8;
+      doc.text(`Confidence: ${item.evaluation?.confidenceScore}/10`, 20, y);
+      y += 12;
 
-      doc.text(doc.splitTextToSize(feedback, 170), 20, y);
+      doc.text(
+        doc.splitTextToSize(`Feedback: ${item.evaluation?.feedback}`, 170),
+        20,
+        y
+      );
       y += 20;
 
-      doc.text(doc.splitTextToSize(idealAnswer, 170), 20, y);
+      doc.text(
+        doc.splitTextToSize(`Ideal Answer: ${item.evaluation?.idealAnswer}`, 170),
+        20,
+        y
+      );
       y += 25;
 
-      doc.text(doc.splitTextToSize(improvement, 170), 20, y);
+      doc.text(
+        doc.splitTextToSize(`Improvement: ${item.evaluation?.improvement}`, 170),
+        20,
+        y
+      );
       y += 25;
     });
 
-    doc.save("HireSense_AI_Report.pdf");
+    doc.save("HireSense_AI_Advanced_Report.pdf");
   };
 
   return (
-    <div style={{ maxWidth: "1000px", margin: "50px auto" }}>
+    <div style={{ maxWidth: "1100px", margin: "50px auto" }}>
       <h1>Interview Report</h1>
 
       <h3>Role: {role}</h3>
       <h3>Difficulty: {difficulty}</h3>
 
-      <div style={{ background: "#f1f1f1", padding: "20px", marginTop: "20px" }}>
-        <h2>Overall Score: {averageScore}/100</h2>
+      <div
+        style={{
+          background: "#f1f1f1",
+          padding: "20px",
+          marginTop: "20px",
+          borderRadius: "10px",
+        }}
+      >
+        <h2>Overall Score: {overallAverage}/100</h2>
         <h2>Recommendation: {getRecommendation()}</h2>
         <p>Questions Answered: {results.length}</p>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, 1fr)",
+          gap: "15px",
+          marginTop: "25px",
+        }}
+      >
+        <div style={{ background: "#f8f8f8", padding: "15px", borderRadius: "10px" }}>
+          <h3>Technical</h3>
+          <h2>{technicalAverage}/100</h2>
+        </div>
+
+        <div style={{ background: "#f8f8f8", padding: "15px", borderRadius: "10px" }}>
+          <h3>Communication</h3>
+          <h2>{communicationAverage}/100</h2>
+        </div>
+
+        <div style={{ background: "#f8f8f8", padding: "15px", borderRadius: "10px" }}>
+          <h3>Confidence</h3>
+          <h2>{confidenceAverage}/100</h2>
+        </div>
+
+        <div style={{ background: "#f8f8f8", padding: "15px", borderRadius: "10px" }}>
+          <h3>Overall</h3>
+          <h2>{overallAverage}/100</h2>
+        </div>
       </div>
 
       <h2 style={{ marginTop: "30px" }}>Performance Analytics</h2>
@@ -119,7 +177,7 @@ function Results() {
       <div
         style={{
           width: "100%",
-          height: "350px",
+          height: "400px",
           background: "#f8f8f8",
           padding: "20px",
           borderRadius: "10px",
@@ -133,39 +191,16 @@ function Results() {
               <XAxis dataKey="question" />
               <YAxis domain={[0, 10]} />
               <Tooltip />
-              <Bar dataKey="score" />
+              <Legend />
+              <Bar dataKey="Overall" />
+              <Bar dataKey="Technical" />
+              <Bar dataKey="Communication" />
+              <Bar dataKey="Confidence" />
             </BarChart>
           </ResponsiveContainer>
         ) : (
           <p>No chart data available.</p>
         )}
-      </div>
-
-      <div
-        style={{
-          background: "#f1f1f1",
-          padding: "20px",
-          borderRadius: "10px",
-          marginBottom: "30px",
-        }}
-      >
-        <h2>Performance Analysis</h2>
-
-        <p>
-          <b>Highest Score:</b> {highestScore}/10
-        </p>
-
-        <p>
-          <b>Lowest Score:</b> {lowestScore}/10
-        </p>
-
-        <p>
-          <b>Average Performance:</b> {averageScore}/100
-        </p>
-
-        <p>
-          <b>Hiring Recommendation:</b> {getRecommendation()}
-        </p>
       </div>
 
       <button
@@ -176,7 +211,7 @@ function Results() {
           cursor: "pointer",
         }}
       >
-        Download PDF Report
+        Download Advanced PDF Report
       </button>
 
       <button
@@ -212,7 +247,19 @@ function Results() {
           </p>
 
           <p>
-            <b>Score:</b> {item.evaluation?.score}/10
+            <b>Overall Score:</b> {item.evaluation?.overallScore}/10
+          </p>
+
+          <p>
+            <b>Technical Score:</b> {item.evaluation?.technicalScore}/10
+          </p>
+
+          <p>
+            <b>Communication Score:</b> {item.evaluation?.communicationScore}/10
+          </p>
+
+          <p>
+            <b>Confidence Score:</b> {item.evaluation?.confidenceScore}/10
           </p>
 
           <p>
