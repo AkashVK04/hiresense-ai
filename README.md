@@ -45,10 +45,6 @@ Charts
 Deployment
 - Vercel
 
-## 📸 Screenshots
-
-(Home, Upload Resume, Interview, Results, Dashboard)
-
 ## ⚙️ Installation
 
 ```bash
@@ -56,3 +52,21 @@ git clone https://github.com/AkashVK04/hiresense-ai.git
 cd hiresense-ai
 npm install
 npm run dev
+## 🚀 Future Improvements
+
+- Company-specific mock interviews
+- Coding interview module
+- Voice-based interview support
+- ATS resume score breakdown
+- Admin analytics dashboard
+
+## 👨‍💻 Author
+
+**Akash V K**
+
+- GitHub: https://github.com/AkashVK04
+- Email: akashvk5757@gmail.com
+
+## 📄 License
+
+This project is developed for educational and academic purposes.
