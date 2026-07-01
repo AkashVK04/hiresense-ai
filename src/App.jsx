@@ -4,6 +4,7 @@ import Home from "./pages/Home";
 import UploadResume from "./pages/UploadResume";
 import Interview from "./pages/Interview";
 import Results from "./pages/Results";
+import Dashboard from "./pages/Dashboard";
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Route path="/upload" element={<UploadResume />} />
         <Route path="/interview" element={<Interview />} />
         <Route path="/results" element={<Results />} />
+        <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
     </BrowserRouter>
   );

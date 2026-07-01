@@ -1,5 +1,26 @@
 function cleanJsonResponse(text) {
-  return text.replace(/```json/g, "").replace(/```/g, "").trim();
+  let cleaned = text
+    .replace(/```json/g, "")
+    .replace(/```/g, "")
+    .trim();
+
+  const firstObject = cleaned.indexOf("{");
+  const lastObject = cleaned.lastIndexOf("}");
+
+  const firstArray = cleaned.indexOf("[");
+  const lastArray = cleaned.lastIndexOf("]");
+
+  // Prefer JSON object first
+  if (firstObject !== -1 && lastObject !== -1) {
+    return cleaned.slice(firstObject, lastObject + 1);
+  }
+
+  // Otherwise JSON array
+  if (firstArray !== -1 && lastArray !== -1) {
+    return cleaned.slice(firstArray, lastArray + 1);
+  }
+
+  return cleaned;
 }
 
 async function callGroq(prompt) {
@@ -28,24 +49,48 @@ async function callGroq(prompt) {
   return data.choices?.[0]?.message?.content || "{}";
 }
 
-export async function generateQuestions(resumeText, role, difficulty) {
+export async function generateQuestions(
+  resumeText,
+  role,
+  difficulty
+) {
   const prompt = `
-Generate exactly 8 interview questions for ${role} role.
-Difficulty: ${difficulty}
+You are an expert technical interviewer.
 
-Candidate Resume:
+Resume:
 ${resumeText}
 
-Return ONLY a valid JSON array of strings.
+Role:
+${role}
+
+Difficulty:
+${difficulty}
+
+Generate exactly 8 interview questions.
+
+Rules:
+- 4 technical questions
+- 2 project questions
+- 2 HR questions
+- Return ONLY a JSON array of strings
+- No markdown
 `;
 
   const text = await callGroq(prompt);
+
   return JSON.parse(cleanJsonResponse(text));
 }
 
-export async function evaluateAnswer(question, answer, role) {
+export async function evaluateAnswer(
+  question,
+  answer,
+  role
+) {
   const prompt = `
-Evaluate this interview answer for ${role} role.
+You are an interview evaluator.
+
+Role:
+${role}
 
 Question:
 ${question}
@@ -54,6 +99,7 @@ Candidate Answer:
 ${answer}
 
 Return ONLY valid JSON:
+
 {
   "technicalScore": 0,
   "communicationScore": 0,
@@ -63,20 +109,33 @@ Return ONLY valid JSON:
   "idealAnswer": "",
   "improvement": ""
 }
+
+Rules:
+- Scores must be 0 to 10
+- No markdown
+- No extra text
 `;
 
   const text = await callGroq(prompt);
+
   return JSON.parse(cleanJsonResponse(text));
 }
 
-export async function analyzeResume(resumeText, role) {
+export async function analyzeResume(
+  resumeText,
+  role
+) {
   const prompt = `
-Analyze this resume for ${role} role.
+You are an ATS resume analyzer.
 
 Resume:
 ${resumeText}
 
+Target Role:
+${role}
+
 Return ONLY valid JSON:
+
 {
   "resumeScore": 0,
   "skillsDetected": [],
@@ -85,6 +144,47 @@ Return ONLY valid JSON:
   "suggestions": [],
   "summary": ""
 }
+
+Rules:
+- resumeScore should be 0 to 100
+- skillsDetected should come from resume
+- projectsDetected should come from resume
+- missingSkills should be useful for target role
+- suggestions should improve resume
+- No markdown
+- No extra text
+`;
+
+  const text = await callGroq(prompt);
+
+  return JSON.parse(cleanJsonResponse(text));
+}
+export async function analyzePerformance(results, role) {
+  const prompt = `
+Analyze this mock interview performance.
+
+Role:
+${role}
+
+Interview Results:
+${JSON.stringify(results)}
+
+Return ONLY valid JSON:
+
+{
+  "strengths": [],
+  "weaknesses": [],
+  "focusAreas": [],
+  "finalAdvice": ""
+}
+
+Rules:
+- strengths should be short points
+- weaknesses should be short points
+- focusAreas should be skills/topics to improve
+- finalAdvice should be beginner-friendly
+- No markdown
+- No extra text
 `;
 
   const text = await callGroq(prompt);
